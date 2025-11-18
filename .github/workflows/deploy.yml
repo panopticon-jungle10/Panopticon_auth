@@ -53,14 +53,19 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
       
-      - name: Install dependencies
-        run: npm ci --production
+      - name: Install all dependencies
+        run: npm ci
       
       - name: Build application
         run: npm run build
       
       - name: Generate Prisma client
         run: npx prisma generate
+      
+      - name: Install production dependencies only
+        run: |
+          rm -rf node_modules
+          npm ci --production
       
       - name: Create deployment package
         run: |

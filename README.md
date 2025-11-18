@@ -1,257 +1,92 @@
-# Panopticon Lambda Backend
+# Panopticon Lambda Backend (User-only)
 
-AWS Lambda 기반의 서버리스 백엔드 API 서비스입니다. 알림 설정 관리와 SLO 설정 관리 기능을 제공합니다.
+이 저장소의 Lambda 백엔드는 현재 **사용자 정보(user)** 관리 기능만 제공합니다. 이전에 포함되어 있던 알림(notification) 또는 SLO 관련 기능은 제거되었거나 별도 서비스로 분리되었습니다.
 
-## 📁 프로젝트 구조
+## 📁 간단한 프로젝트 구조
 
 ```
 lambda-backend/
 ├── src/
 │   ├── types/
-│   │   └── index.ts              # 타입 정의
+│   │   └── index.ts        # User 관련 타입 정의
 │   ├── config/
-│   │   └── index.ts              # 설정 관리
-│   ├── utils/
-│   │   ├── response.ts           # HTTP 응답 유틸리티
-│   │   └── auth.ts               # 인증 유틸리티
+│   │   └── index.ts        # 설정 관리
 │   ├── services/
-│   │   └── database.ts           # 데이터베이스 초기화
+│   │   └── database.ts     # Prisma 초기화 등 DB 연결
 │   ├── routes/
-│   │   ├── notifications.ts      # 알림 관련 라우터
-│   │   └── slo.ts               # SLO 관련 라우터
-│   ├── index.ts                 # 메인 Lambda 핸들러
-│   └── prisma.ts                # Prisma 클라이언트
+│   │   └── users.ts        # 사용자 CRUD 엔드포인트
++│   ├── index.ts            # Lambda 핸들러 (라우팅)
+│   └── prisma.ts           # Prisma 클라이언트
 ├── prisma/
-│   └── schema.prisma            # 데이터베이스 스키마
+│   └── schema.prisma       # users 테이블 스키마
 ├── package.json
 ├── tsconfig.json
 └── README.md
 ```
 
-## 📋 파일별 역할
+## 핵심 책임
 
-### 🎯 **Core Files**
+- 사용자 생성, 조회, 수정, 삭제 (CRUD)
+- 요청 인증(옵션) 및 간단한 입력 검증
+- Prisma를 통한 PostgreSQL 연동
 
-#### `src/index.ts`
-- **역할**: 메인 Lambda 핸들러
-- **기능**: 
-  - 데이터베이스 초기화
-  - 요청 라우팅
-  - 전역 에러 처리
+## 제공되는 (예시) 엔드포인트
 
-#### `src/prisma.ts`
-- **역할**: Prisma 클라이언트 인스턴스
-- **기능**: 데이터베이스 연결 관리
+- `GET /users/{id}` — 사용자 조회
+- `POST /users` — 사용자 생성
+- `PUT /users/{id}` — 사용자 업데이트
+- `DELETE /users/{id}` — 사용자 삭제
 
-### 🏗️ **Architecture Layers**
+요청 예시 (새 사용자 생성):
 
-#### `src/types/index.ts`
-- **역할**: 타입 정의 중앙화
-- **포함 타입**:
-  - `NotificationSettings`: 알림 설정
-  - `SloSettings`: SLO 설정
-  - `SlackMessage`: Slack 메시지 구조
-  - `LogEntry`: 로그 엔트리
-  - `ApiResponse`: API 응답
-
-#### `src/config/index.ts`
-- **역할**: 애플리케이션 설정 관리
-- **포함 설정**:
-  - CORS 설정
-  - 데이터베이스 설정
-  - 기본값 설정
-  - HTTP 상태 코드 상수
-
-#### `src/utils/`
-- **`response.ts`**: HTTP 응답 생성 유틸리티
-  - 표준화된 응답 형식
-  - 상태 코드별 헬퍼 함수
-- **`auth.ts`**: 인증 관련 유틸리티
-  - 사용자 ID 추출
-  - Bearer 토큰 처리
-
-#### `src/services/database.ts`
-- **역할**: 데이터베이스 초기화 서비스
-- **기능**:
-  - 테이블 생성
-  - 스키마 마이그레이션
-  - 초기화 상태 관리
-
-#### `src/routes/`
-- **`notifications.ts`**: 알림 관련 API 라우터
-  - GET `/notifications/settings`: 알림 설정 조회
-  - POST `/notifications/settings`: 알림 설정 저장
-  - POST `/notifications/send`: Slack 알림 전송
-- **`slo.ts`**: SLO 관련 API 라우터
-  - GET `/slo/settings`: SLO 설정 조회
-  - POST `/slo/settings`: SLO 설정 생성
-
-### 📊 **Database Schema**
-
-#### `prisma/schema.prisma`
-- **역할**: 데이터베이스 스키마 정의
-- **테이블**:
-  - `users`: 사용자 정보
-  - `notification_settings`: 알림 설정
-  - `slo_settings`: SLO 설정
-
-## 🚀 API 엔드포인트
-
-### 알림 설정 API
-
-#### `GET /notifications/settings`
 ```bash
-# Query Parameter 방식
-GET /notifications/settings?userId=test-user
-
-# Bearer Token 방식  
-GET /notifications/settings
-Authorization: Bearer test-user
-```
-
-**응답**:
-```json
-{
-  "notification_enabled": true,
-  "error_level_filter": "ERROR",
-  "service_filters": []
-}
-```
-
-#### `POST /notifications/settings`
-```bash
-POST /notifications/settings?userId=test-user
+POST /users
 Content-Type: application/json
 
 {
-  "slack_webhook_url": "https://hooks.slack.com/...",
-  "notification_enabled": true,
-  "error_level_filter": "ERROR",
-  "service_filters": ["service1", "service2"]
+  "id": "user-123",
+  "name": "Jane Doe",
+  "email": "jane@example.com"
 }
 ```
 
-#### `POST /notifications/send`
-```bash
-POST /notifications/send
-Content-Type: application/json
+인증 예시 (선택적):
 
-{
-  "userId": "test-user",
-  "log": {
-    "service_name": "api-server",
-    "level": "ERROR",
-    "message": "Database connection failed",
-    "timestamp": "2025-11-18T10:30:00Z"
-  }
+```
+Authorization: Bearer <token>
+```
+
+## 데이터베이스 스키마 (요약)
+
+`prisma/schema.prisma`에는 `users` 테이블(또는 모델)만 유지되어야 합니다. 예:
+
+```prisma
+model User {
+  id        String @id
+  name      String
+  email     String @unique
+  createdAt DateTime @default(now())
 }
 ```
 
-### SLO 설정 API
+## 개발 및 배포
 
-#### `GET /slo/settings`
-```bash
-GET /slo/settings
-Authorization: Bearer test-user
-```
+요구사항:
 
-#### `POST /slo/settings`
-```bash
-POST /slo/settings
-Authorization: Bearer test-user
-Content-Type: application/json
-
-{
-  "service_name": "api-server",
-  "metric_type": "availability",
-  "threshold_value": 99.9,
-  "time_window": "24h"
-}
-```
-
-## 🚀 CI/CD 파이프라인
-
-### GitHub Actions 설정
-
-1. **Repository Secrets 설정**:
-   ```
-   AWS_ACCESS_KEY_ID: <your-access-key>
-   AWS_SECRET_ACCESS_KEY: <your-secret-key>
-   ```
-
-2. **자동 배포**: `main` 브랜치에 push 시 자동 배포
-3. **테스트**: PR 생성 시 자동 테스트 실행
-
-### 수동 배포
-
-```bash
-# 로컬에서 직접 배포
-./deploy.sh
-```
-
-### 배포 과정
-
-1. TypeScript 컴파일
-2. Prisma 클라이언트 생성  
-3. 배포 패키지 생성 (zip)
-4. S3 백업 업로드
-5. Lambda 함수 업데이트
-
-## 🛠️ 개발 환경 설정
-
-### 필수 요구사항
 - Node.js 20.x
-- AWS CLI 설정
-- PostgreSQL 데이터베이스
+- PostgreSQL
+- AWS CLI (Lambda에 배포할 경우)
 
-### 환경 변수
+환경변수 예시:
+
 ```bash
 DATABASE_URL=postgresql://username:password@host:5432/database
 ```
 
-### 빌드 및 배포
+로컬 빌드 및 배포(간단):
+
 ```bash
-# 의존성 설치
 npm install
-
-# TypeScript 컴파일
 npm run build
-
-# 배포 패키지 생성
-zip -r deployment.zip dist/ node_modules/ prisma/
-
-# Lambda 함수 업데이트
-aws lambda update-function-code \
-  --function-name panopticon-backend \
-  --zip-file fileb://deployment.zip
+./deploy.sh    # 저장소에 포함된 배포 스크립트가 있는 경우
 ```
-
-## 🏛️ 아키텍처 특징
-
-### ✅ **책임 분리**
-- 각 레이어별 명확한 역할 분담
-- 라우터, 서비스, 유틸리티 분리
-
-### ✅ **타입 안전성**
-- TypeScript 강타입 시스템 활용
-- 모든 API 인터페이스 타입 정의
-
-### ✅ **설정 중앙화**
-- 환경별 설정 관리
-- 상수 및 기본값 중앙 관리
-
-### ✅ **에러 처리**
-- 표준화된 에러 응답
-- 레이어별 적절한 에러 핸들링
-
-### ✅ **확장성**
-- 모듈화된 구조로 기능 추가 용이
-- 재사용 가능한 유틸리티 함수
-
-## 🔧 주요 기술 스택
-
-- **Runtime**: Node.js 20.x
-- **Language**: TypeScript
-- **Database**: PostgreSQL + Prisma ORM
-- **Platform**: AWS Lambda
-- **Build**: TypeScript Compiler

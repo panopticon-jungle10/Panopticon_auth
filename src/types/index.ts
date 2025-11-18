@@ -1,3 +1,24 @@
+export interface User {
+  id: string;
+  github_id?: string | null;
+  google_id?: string | null;
+  login?: string | null;
+  email?: string | null;
+  avatar_url?: string | null;
+  provider?: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface UpsertUserRequest {
+  github_id?: string;
+  google_id?: string;
+  login: string;
+  email: string;
+  avatar_url: string;
+  provider: 'github' | 'google';
+}
+
 export interface NotificationSettings {
   id?: string;
   user_id: string;

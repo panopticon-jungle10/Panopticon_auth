@@ -18,16 +18,18 @@ npx prisma generate
 echo "📦 Creating deployment package..."
 zip -r deployment.zip dist/ node_modules/ prisma/
 
-# S3에 업로드 (백업용)
+# S3에 업로드 및 Lambda 업데이트
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-echo "☁️ Uploading to S3..."
-aws s3 cp deployment.zip s3://panopticon-lambda-deployment-fixed/deployment-${TIMESTAMP}.zip
+S3_KEY="deployment-${TIMESTAMP}.zip"
 
-# Lambda 함수 업데이트
+echo "☁️ Uploading to S3..."
+aws s3 cp deployment.zip s3://panopticon-lambda-deployment-fixed/${S3_KEY}
+
 echo "⚡ Updating Lambda function..."
 aws lambda update-function-code \
   --function-name panopticon-backend \
-  --zip-file fileb://deployment.zip \
+  --s3-bucket panopticon-lambda-deployment-fixed \
+  --s3-key ${S3_KEY} \
   --region ap-northeast-2
 
 # 업데이트 완료 대기

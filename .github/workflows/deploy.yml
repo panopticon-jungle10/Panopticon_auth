@@ -71,15 +71,19 @@ jobs:
         run: |
           zip -r deployment.zip dist/ node_modules/ prisma/
       
-      - name: Upload to S3
+      - name: Upload to S3 and update Lambda
         run: |
-          aws s3 cp deployment.zip s3://${{ env.S3_BUCKET }}/deployment-$(date +%Y%m%d-%H%M%S).zip
-      
-      - name: Update Lambda function
-        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          S3_KEY="deployment-${TIMESTAMP}.zip"
+          
+          # S3에 업로드
+          aws s3 cp deployment.zip s3://${{ env.S3_BUCKET }}/${S3_KEY}
+          
+          # Lambda 함수 업데이트 (S3에서)
           aws lambda update-function-code \
             --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
-            --zip-file fileb://deployment.zip
+            --s3-bucket ${{ env.S3_BUCKET }} \
+            --s3-key ${S3_KEY}
       
       - name: Wait for update to complete
         run: |

@@ -10,6 +10,7 @@ env:
   AWS_REGION: ap-northeast-2
   LAMBDA_FUNCTION_NAME: panopticon-backend
   S3_BUCKET: panopticon-lambda-deployment-fixed
+  PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: 1
 
 jobs:
   test:

@@ -1,0 +1,56 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  github_id  String?  @unique
+  google_id  String?  @unique
+  login      String?
+  email      String?
+  avatar_url String?
+  provider   String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  notification_settings NotificationSettings?
+  slo_settings          SloSettings[]
+
+  @@map("users")
+}
+
+model NotificationSettings {
+  id                   String   @id @default(cuid())
+  user_id              String   @unique
+  slack_webhook_url    String?
+  notification_enabled Boolean  @default(true)
+  error_level_filter   String   @default("ERROR")
+  service_filters      String[]
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("notification_settings")
+}
+
+model SloSettings {
+  id              String   @id @default(cuid())
+  user_id         String
+  service_name    String
+  metric_type     String   // 'availability', 'latency', 'error_rate'
+  threshold_value Float
+  time_window     String   // '1h', '24h', '7d'
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("slo_settings")
+}

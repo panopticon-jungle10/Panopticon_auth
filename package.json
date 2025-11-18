@@ -1,0 +1,24 @@
+{
+  "name": "panopticon-lambda-backend",
+  "version": "1.0.0",
+  "description": "Lambda backend for Panopticon with error logging and Slack notifications",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"No tests specified\" && exit 0",
+    "deploy": "sam build && sam deploy",
+    "local": "sam local start-api"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "aws-sdk": "^2.1490.0",
+    "pg": "^8.11.3",
+    "prisma": "^5.22.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.158",
+    "@types/node": "^20.8.0",
+    "@types/pg": "^8.10.7",
+    "typescript": "^5.2.2"
+  }
+}

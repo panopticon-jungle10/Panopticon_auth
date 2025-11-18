@@ -5,6 +5,7 @@ import { success, unauthorized, methodNotAllowed, internalError } from '../utils
 import { config } from '../config';
 import { NotificationSettings, LogEntry, SlackMessage } from '../types';
 import https from 'https';
+import { URL } from 'url';
 
 export const handleNotificationSettings = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   const userId = extractUserId(event);
